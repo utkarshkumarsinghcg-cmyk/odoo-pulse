@@ -1,4 +1,4 @@
-// Safar-sutra Real AI Service (Google Gemini & OpenAI Integration)
+// Safar-sutra Real AI Service (Google Gemini, OpenAI & Backend Integration)
 
 const GEMINI_MODELS = [
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
@@ -25,7 +25,7 @@ export function setStoredApiKey(key) {
 }
 
 /**
- * Chat with real AI using Gemini or OpenAI with conversational fallback
+ * Chat with real AI using Gemini, OpenAI, Backend Proxy, or Conversational Engine
  */
 export async function chatWithSafarAI(userMessage, conversationHistory = []) {
   const apiKey = getStoredApiKey();
@@ -97,11 +97,24 @@ export async function chatWithSafarAI(userMessage, conversationHistory = []) {
         }
       }
     } catch (error) {
-      console.warn('Live API call failed, switching to conversational travel intelligence:', error);
+      console.warn('Direct client API call failed, trying backend proxy:', error.message);
     }
   }
 
-  // Real-World Conversational Travel Intelligence Engine
+  // 3. Try backend AI proxy if available
+  try {
+    const { aiApi } = await import('./api');
+    if (aiApi && aiApi.chat) {
+      const res = await aiApi.chat(userMessage, conversationHistory);
+      if (res && res.reply) {
+        return res.reply;
+      }
+    }
+  } catch (err) {
+    // Backend AI proxy optional
+  }
+
+  // 4. Real-World Conversational Travel Intelligence Engine
   return generateIntelligentTravelGuide(userMessage);
 }
 

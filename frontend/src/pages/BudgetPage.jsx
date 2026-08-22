@@ -44,9 +44,52 @@ function DonutChart({ categories, totalSpent }) {
 
 export default function BudgetPage() {
   const { trips } = useTrips();
-  const budget = mockBudgetOverview;
+
+  // Dynamic budget calculations
+  const totalAllocated = trips.reduce((sum, t) => sum + (t.budget || 0), 0);
+  const totalSpent = trips.reduce((sum, t) => sum + (t.spent || 0), 0);
+  
+  const totalDays = trips.reduce((sum, t) => {
+    if (!t.startDate || !t.endDate) return sum;
+    const diff = Math.abs(new Date(t.endDate) - new Date(t.startDate));
+    return sum + Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
+  }, 0);
+  const avgCostPerDay = totalDays > 0 ? Math.round(totalSpent / totalDays) : 0;
+
+  const categoryMap = {
+    stay: { name: 'Accommodation & Stays', amount: 0, budget: 5000, color: '#4A2E18', icon: 'hotel' },
+    transport: { name: 'Transport & Flights', amount: 0, budget: 4000, color: '#C88A4B', icon: 'flight' },
+    activity: { name: 'Activities & Guided Tours', amount: 0, budget: 2500, color: '#8D582A', icon: 'temple_hindu' },
+    food: { name: 'Food & Dining', amount: 0, budget: 1500, color: '#A06D3B', icon: 'restaurant' },
+    shopping: { name: 'Shopping & Souvenirs', amount: 0, budget: 700, color: '#D4A373', icon: 'shopping_bag' }
+  };
+
+  trips.forEach(trip => {
+    (trip.days || []).forEach(day => {
+      (day.activities || []).forEach(act => {
+        const type = (act.category || act.type || '').toLowerCase();
+        let key = 'activity';
+        if (type.includes('stay') || type.includes('hotel') || type.includes('accommodation')) key = 'stay';
+        else if (type.includes('trans') || type.includes('flight') || type.includes('drive')) key = 'transport';
+        else if (type.includes('food') || type.includes('dine') || type.includes('restaurant') || type.includes('meal')) key = 'food';
+        else if (type.includes('shop')) key = 'shopping';
+        
+        if (categoryMap[key]) {
+          categoryMap[key].amount += Number(act.cost) || 0;
+        }
+      });
+    });
+  });
+
+  const budget = {
+    totalAllocated,
+    totalSpent,
+    avgCostPerDay,
+    categories: Object.values(categoryMap)
+  };
+
   const remaining = budget.totalAllocated - budget.totalSpent;
-  const pct = Math.round((budget.totalSpent / budget.totalAllocated) * 100);
+  const pct = budget.totalAllocated > 0 ? Math.round((budget.totalSpent / budget.totalAllocated) * 100) : 0;
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 md:px-10 lg:px-12 py-8">

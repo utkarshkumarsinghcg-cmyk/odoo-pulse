@@ -1,10 +1,64 @@
-import { useParams, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useTrips } from '../context/TripContext';
+import { tripsApi } from '../services/api';
 
 export default function SharedItineraryPage() {
-  const { id } = useParams();
+  const { id, token: routeToken } = useParams();
+  const [searchParams] = useSearchParams();
+  const queryToken = searchParams.get('token');
+  const token = routeToken || queryToken;
+
   const { getTripById } = useTrips();
-  const trip = getTripById(id);
+  const localTrip = getTripById(id);
+
+  const [trip, setTrip] = useState(localTrip);
+  const [loading, setLoading] = useState(!localTrip);
+
+  useEffect(() => {
+    async function loadSharedTrip() {
+      if (token) {
+        setLoading(true);
+        try {
+          const res = await tripsApi.getShared(token);
+          if (res.trip) {
+            setTrip({
+              id: res.trip.id,
+              name: res.trip.name,
+              description: res.trip.description,
+              startDate: res.trip.start_date,
+              endDate: res.trip.end_date,
+              coverImage: res.trip.cover_photo_url || 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1200&auto=format&fit=crop&q=80',
+              status: res.trip.status || 'confirmed',
+              stops: (res.trip.stops || []).map(s => s.city),
+              days: (res.trip.stops || []).map((s, idx) => ({
+                day: idx + 1,
+                city: s.city,
+                activities: (s.activities || []).map(a => ({
+                  id: a.id,
+                  name: a.name,
+                  time: a.time_slot || '10:00',
+                  cost: Number(a.cost) || 0,
+                  category: a.type || 'Sightseeing',
+                }))
+              }))
+            });
+          }
+        } catch (err) {
+          console.warn('Could not load trip from token API, fallback to local:', err.message);
+        } finally {
+          setLoading(false);
+        }
+      } else if (localTrip) {
+        setTrip(localTrip);
+        setLoading(false);
+      } else {
+        setLoading(false);
+      }
+    }
+
+    loadSharedTrip();
+  }, [token, id, localTrip]);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -19,12 +73,21 @@ export default function SharedItineraryPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen flex-col gap-4 bg-[#FAF7F2]">
+        <span className="material-symbols-outlined text-4xl text-[#4A2E18] animate-spin">progress_activity</span>
+        <p className="text-xs text-[#8A715F] font-bold">Loading public itinerary...</p>
+      </div>
+    );
+  }
+
   if (!trip) {
     return (
       <div className="flex items-center justify-center min-h-screen flex-col gap-4 bg-[#FAF7F2]">
         <span className="material-symbols-outlined text-6xl text-[#8A715F]">temple_hindu</span>
         <p className="text-[#6B5646] font-bold">Itinerary not found or link has expired.</p>
-        <Link to="/login" className="text-[#4A2E18] underline text-xs font-bold">Go to Safar-sutra Home</Link>
+        <Link to="/login" className="text-[#4A2E18] underline text-xs font-bold">Go to GlobeTrotter Home</Link>
       </div>
     );
   }
@@ -37,17 +100,17 @@ export default function SharedItineraryPage() {
       {/* Public Header */}
       <header className="bg-white border-b border-[#EADBCE] px-4 md:px-12 py-4 flex items-center justify-between max-w-[1440px] mx-auto">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-[#4A2E18] flex items-center justify-center text-[#E8C59A] shadow-md shadow-[#4A2E18]/20">
-            <span className="material-symbols-outlined text-2xl">temple_hindu</span>
+          <div className="w-10 h-10 rounded-2xl bg-[#0057d9] flex items-center justify-center text-white shadow-md">
+            <span className="material-symbols-outlined text-2xl">flight_takeoff</span>
           </div>
           <div>
-            <span className="text-xl font-black text-[#3A2312] tracking-tight">Safar-sutra</span>
-            <p className="text-[10px] text-[#8A715F] font-semibold">Shared Travel Itinerary</p>
+            <span className="text-xl font-black text-[#191c1e] tracking-tight">GlobeTrotter</span>
+            <p className="text-[10px] text-[#8A715F] font-semibold">Public Shared Itinerary</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Link to="/login" className="text-xs text-[#4A2E18] font-bold hover:underline">Sign In</Link>
-          <Link to="/signup" className="bg-[#4A2E18] hover:bg-[#341F0E] text-[#FFFDF9] rounded-xl px-4 py-2 text-xs font-bold shadow-xs">
+          <Link to="/login" className="text-xs text-[#0057d9] font-bold hover:underline">Sign In</Link>
+          <Link to="/signup" className="bg-[#0057d9] hover:bg-[#0041a7] text-white rounded-xl px-4 py-2 text-xs font-bold shadow-xs">
             Join Free
           </Link>
         </div>
@@ -61,7 +124,7 @@ export default function SharedItineraryPage() {
           
           <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end text-white">
             <div>
-              <span className="bg-[#D4A373] text-[#2A180C] text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider mb-2 inline-block">
+              <span className="bg-[#fe7944] text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider mb-2 inline-block">
                 {trip.status}
               </span>
               <h1 className="text-3xl sm:text-4xl font-extrabold text-[#FFFDF9]">{trip.name}</h1>
@@ -89,7 +152,7 @@ export default function SharedItineraryPage() {
             { label: 'Est. Budget', value: `$${totalCost.toLocaleString()}`, icon: 'payments' },
           ].map(({ label, value, icon }) => (
             <div key={label} className="bg-white rounded-3xl p-4 border border-[#EADBCE] shadow-warm-md text-center">
-              <span className="material-symbols-outlined text-[#4A2E18] text-2xl">{icon}</span>
+              <span className="material-symbols-outlined text-[#0057d9] text-2xl">{icon}</span>
               <p className="text-xl font-bold text-[#2A180C] mt-1">{value}</p>
               <p className="text-xs text-[#8A715F]">{label}</p>
             </div>
@@ -97,14 +160,14 @@ export default function SharedItineraryPage() {
         </div>
 
         {/* Copy This Trip CTA */}
-        <div className="bg-gradient-to-br from-[#4A2E18] to-[#2B180B] rounded-3xl p-6 sm:p-7 flex flex-col sm:flex-row items-center justify-between gap-4 mb-8 text-white shadow-warm-lg">
+        <div className="bg-gradient-to-br from-[#0057d9] to-[#002b75] rounded-3xl p-6 sm:p-7 flex flex-col sm:flex-row items-center justify-between gap-4 mb-8 text-white shadow-warm-lg">
           <div>
-            <h3 className="text-lg font-bold text-[#FFFDF9]">Inspired by this sacred yatra?</h3>
-            <p className="text-xs text-[#EADBCE] mt-0.5">Copy this exact itinerary to your Safar-sutra account and personalize it!</p>
+            <h3 className="text-lg font-bold text-[#FFFDF9]">Inspired by this itinerary?</h3>
+            <p className="text-xs text-[#EADBCE] mt-0.5">Copy this exact itinerary to your GlobeTrotter account and personalize it!</p>
           </div>
           <Link
             to="/signup"
-            className="bg-[#D4A373] hover:bg-[#C88A4B] text-[#2A180C] font-bold px-5 py-2.5 rounded-xl text-xs whitespace-nowrap shadow-md flex items-center gap-1.5"
+            className="bg-[#fe7944] hover:bg-[#e26431] text-white font-bold px-5 py-2.5 rounded-xl text-xs whitespace-nowrap shadow-md flex items-center gap-1.5"
           >
             <span className="material-symbols-outlined text-base">content_copy</span>
             <span>Copy This Trip</span>
@@ -116,12 +179,12 @@ export default function SharedItineraryPage() {
           {(trip.days || []).map((dayBlock) => (
             <div key={dayBlock.day} className="bg-white rounded-3xl p-6 sm:p-7 border border-[#EADBCE] shadow-warm-md">
               <div className="flex items-center gap-3.5 pb-4 mb-4 border-b border-[#EADBCE]">
-                <div className="w-11 h-11 rounded-2xl bg-[#4A2E18] text-white flex flex-col items-center justify-center font-bold">
-                  <span className="text-[9px] text-[#E8C59A]">Day</span>
+                <div className="w-11 h-11 rounded-2xl bg-[#0057d9] text-white flex flex-col items-center justify-center font-bold">
+                  <span className="text-[9px] text-white/80">Day</span>
                   <span className="text-sm leading-none">{dayBlock.day}</span>
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-[#2A180C]">{dayBlock.city || `Day ${dayBlock.day}`}</h3>
+                  <h3 className="text-base font-bold text-[#191c1e]">{dayBlock.city || `Day ${dayBlock.day}`}</h3>
                   <p className="text-xs text-[#8A715F]">{dayBlock.activities?.length || 0} activities scheduled</p>
                 </div>
               </div>
@@ -130,12 +193,12 @@ export default function SharedItineraryPage() {
                 {(dayBlock.activities || []).map((act) => (
                   <div key={act.id} className="flex items-center justify-between p-3 bg-[#FAF7F2] rounded-2xl border border-[#EADBCE]/80">
                     <div className="flex items-center gap-3">
-                      <span className="text-xs font-bold text-[#C88A4B] bg-white border border-[#EADBCE] px-2 py-0.5 rounded">
+                      <span className="text-xs font-bold text-[#fe7944] bg-white border border-[#EADBCE] px-2 py-0.5 rounded">
                         {act.time}
                       </span>
-                      <span className="text-xs font-bold text-[#2A180C]">{act.name}</span>
+                      <span className="text-xs font-bold text-[#191c1e]">{act.name}</span>
                     </div>
-                    <span className="text-xs font-bold text-[#4A2E18]">{act.cost > 0 ? `$${act.cost}` : 'Free'}</span>
+                    <span className="text-xs font-bold text-[#0057d9]">{act.cost > 0 ? `$${act.cost}` : 'Free'}</span>
                   </div>
                 ))}
               </div>

@@ -1,14 +1,23 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTrips } from '../context/TripContext';
+import { ClipLoader } from 'react-spinners';
 
 export default function MyTripsPage() {
-  const { trips, deleteTrip } = useTrips();
+  const { trips, loading, deleteTrip } = useTrips();
   const navigate = useNavigate();
   const [filterStatus, setFilterStatus] = useState('all');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
 
   const filteredTrips = trips.filter((t) => filterStatus === 'all' || t.status === filterStatus);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <ClipLoader color="#4A2E18" loading={true} size={50} />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 md:px-10 lg:px-12 py-8">

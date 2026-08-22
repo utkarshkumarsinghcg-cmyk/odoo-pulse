@@ -1,47 +1,79 @@
-# 🪔 Safar-sutra (सफ़र-सूत्र) – Intelligent Sacred Yatra & Global Travel Planner
+# SafarSutra  – Intelligent Sacred Yatra & Global Travel Planner
 
-> **Safar-sutra** is an AI-powered, multi-city travel planning platform tailored for spiritual yatras, heritage journeys, and global adventures. It seamlessly combines real-time generative AI intelligence (Google Gemini & OpenAI), interactive day-by-day itinerary builders, visual budget tracking, and community trip sharing into a warm, harmonious aesthetic.
-
----
-
-## 🌟 Short Title & Tagline Options
-
-### Option 1 (Spiritual & Heritage Focus)
-* **Title:** `Safar-sutra — AI-Powered Sacred Yatra & Heritage Travel Planner`
-* **Tagline:** *Craft personalized pilgrimage corridors, temple darshan timelines, and cultural adventures powered by Google Gemini AI.*
-
-### Option 2 (Modern All-in-One Travel)
-* **Title:** `Safar-sutra — Next-Gen Multi-City Itinerary & Budget Manager`
-* **Tagline:** *Discover destinations, build day-wise schedules, track expenses with interactive charts, and collaborate seamlessly.*
-
-### Option 3 (Hackathon / Developer Showcase)
-* **Title:** `Safar-sutra: Full-Stack AI Travel Ecosystem with Gemini API & Odoo Integration`
-* **Tagline:** *A production-ready React + Vite, Express REST API, PostgreSQL, and Gemini generative AI travel companion.*
+> **SafarSutra** is an AI-powered, multi-city travel planning platform tailored for spiritual yatras, heritage journeys, and global adventures. It seamlessly combines real-time generative AI intelligence (Google Gemini), interactive day-by-day itinerary builders, visual budget tracking, and community trip sharing with a premium sapphire-blue aesthetic.
 
 ---
 
-## 🧭 Project Overview & Vision
-
-Modern travel planning—especially for multi-city spiritual circuits and heritage corridors (like Ayodhya, Varanasi, Rajasthan, and Assam)—is often fragmented across scattered notes, flight emails, and spreadsheets.
-
-**Safar-sutra** solves this by unifying every phase of travel into one intuitive web platform:
-1. **Explore & Discover**: Search cities, temple corridors, and curated activities filtered by region, cost index, and categories.
-2. **Generative AI Itinerary Builder**: Real-time itinerary generation using **Google Gemini 1.5** with Aarti timings, Satvik dining, and logistics.
-3. **Interactive Itinerary Builder**: Dynamic day-by-day stops constructor with drag-and-drop scheduling and activity management.
-4. **Smart Financial Clarity**: Visual SVG Donut charts, category limits, average daily cost calculations, and overbudget warnings.
-5. **Timeline & Calendar Flow**: Monthly calendar grid and vertical journey timelines for effortless scheduling.
-6. **Community Collaboration**: One-click public shareable links with a *"Copy This Trip"* feature.
+## 🎨 Brand Identity & Logo
+The application features a custom-designed, theme-integrated logo:
+* **The Compass Core:** A rotating global latitude/longitude coordinate dial representing global travels, with a glowing, pulsing temple silhouette (`temple_hindu`) at its center to represent sacred pilgrimages.
+* **Typography:** Stacked serif branding using Google's **Cinzel** font, styled in a metallic **Sapphire & Crystal Blue** chiseled gradient with hanging drop-cap initial **S** letters inspired by the classic Lord of the Rings aesthetic.
 
 ---
 
-## 🎨 Design Philosophy & Aesthetic
+## 🗺️ System Architecture Flow
 
-* **Background:** Soft Warm Cream (`#FAF7F2` / `#FDFBF7`)
-* **Primary Branding & Buttons:** Rich Earthy Walnut Brown (`#4A2E18` / `#3A2312`)
-* **Accents & Highlights:** Warm Golden Amber (`#D4A373` / `#C88A4B` / `#E8C59A`)
-* **Cards & Containers:** Crisp Pure White with subtle warm borders (`#EADBCE`)
-* **Typography:** Playfair Display, Noto Sans Devanagari, and Inter.
-* **Full-Screen Carousel:** High-definition rotating destination visuals from Ayodhya, Jaipur, Assam, and Andaman.
+```mermaid
+graph TD
+    %% Frontend SPA
+    subgraph Frontend [React SPA - Vite & Tailwind]
+        LP[Landing Page Carousel] --> DB[Traveler Dashboard]
+        DB --> IB[Itinerary Builder]
+        DB --> BC[Budget Donut Charts]
+        DB --> CL[Calendar & Timelines]
+        IB --> SA[Safar AI Chatbot & Generator]
+    end
+
+    %% Core Services & State
+    subgraph Services [State & Services Layer]
+        AC[AuthContext & JWT]
+        TC[TripContext & State]
+        GM[Google Gemini 1.5 Flash API]
+    end
+
+    %% Backend & DB
+    subgraph CoreBackend [Node.js & Express API]
+        EX[Express.js App] --> PG[(PostgreSQL Database)]
+    end
+
+    %% Odoo ERP Synchronization
+    subgraph Odoo [Odoo 17 ERP System]
+        OD[Odoo Backend Module] --> SS_DB[(safar_sutra DB)]
+    end
+
+    %% Data Flow Connections
+    LP -.-> AC
+    DB -.-> TC
+    SA <--> GM
+    TC <--> EX
+    EX <--> OD
+    OD <--> SS_DB
+```
+
+---
+
+## 🌟 Core Features
+
+### 1. Immersive Carousel Landing Page
+* Full-screen high-definition transitions showcasing spiritual and heritage landmarks (including the floating **Jag Niwas Palace in Udaipur**).
+* Staggered right-floating preview cards that scale up dynamically when active, displaying locations and star ratings above the card bounds.
+
+### 2. Intelligent Traveler Dashboard
+* Clean, widget-based dashboard styled in a premium **Sapphire Blue** (`#0288d1`) and **Ice-Blue** (`#e1f5fe`) theme.
+* Centralized stats counters tracking visited countries/destinations and planned yatras.
+* Real-time budget progress bar alerts and quick links to check expenses or generate trips.
+
+### 3. "Safar AI" Travel Companion
+* **Generative Trip Builder:** Craft customized day-wise itineraries with temple darshan rules, Aarti timings, Satvik dining recommendations, and transportation logistics.
+* **Dual Engines:** Utilizes **Google Gemini 1.5 Flash API** for real-time generative intelligence with custom user API key configurations.
+
+### 4. Interactive Itinerary Planner
+* Build schedules day-by-day, add custom stops, allocate budget parameters, and review trip progress indicators.
+* Toggle views between expandable monthly calendars and structured vertical timelines.
+
+### 5. Smart Budget Tracking
+* Visual cost breakdowns using interactive SVG Donut charts.
+* Expense warnings, category-wise expenditure limits, and average daily cost updates.
 
 ---
 
@@ -49,43 +81,19 @@ Modern travel planning—especially for multi-city spiritual circuits and herita
 
 | # | Feature / Screen | Key Functionality |
 |---|---|---|
-| 1 | **Auth & Carousel** | Full-screen rotating destination photography, Google OAuth 1-click login, and email/password authentication. |
-| 2 | **Dashboard / Home Hub** | Central traveler hub with quick stats, upcoming yatras, budget progress, and AI recommendations. |
-| 3 | **Create Trip Modal** | Start & end date picker, budget allocation, and cover photo selector. |
-| 4 | **My Trips** | Filterable grid and list views of active, upcoming, planning, and completed itineraries. |
-| 5 | **Itinerary Builder** | Day-by-day stop creator, city adder, and activity scheduler with real-time cost updates. |
-| 6 | **Itinerary View** | Structured timeline and grouped summary views with duration, expense, and stop badges. |
-| 7 | **City Search** | Dynamic destination search with region filters, popularity ratings, and "Add to Trip" buttons. |
-| 8 | **Activity Search** | Curated experiences filtered by Spiritual, Heritage, Nature, Culture, and Dining categories. |
-| 9 | **Trip Budget & Cost** | Interactive SVG Donut charts, category expense tracking, daily spend averages, and overbudget alerts. |
-| 10 | **Calendar & Timeline** | Interactive monthly date matrix and vertical timeline flow with expandable day inspect panels. |
-| 11 | **Public Share View** | Shareable public itinerary link with social sharing and a "Copy This Trip" cloning CTA. |
-| 12 | **User Profile & Settings** | Editable user details, multi-language preferences (Hindi, English, Sanskrit), saved wishlists, and privacy controls. |
-| 13 | **Admin & Analytics** | Platform adoption dashboard with trending destination rankings and traveler activity metrics. |
-
----
-
-## 🤖 AI Travel Assistant ("Safar AI")
-
-* **Live Interactive Chatbot**: Real-time queries for temple darshan rules, Aarti schedules, best travel seasons, and hidden scenic spots.
-* **Generative Trip Builder**: Generates day-wise custom itineraries directly into the user's dashboard with budget estimations.
-* **Dual Engine Support**: Powered by Google Gemini 1.5 Flash API with OpenAI GPT-4o fallback and custom key configuration.
-
----
-
-## 💻 Tech Stack & Architecture
-
-### Frontend
-* **Framework:** React 18 + Vite (Tailwind CSS v4)
-* **Routing:** React Router v6 (SPA with full history mode)
-* **Icons:** Google Material Symbols Outlined
-* **State Management:** React Context (`AuthContext`, `TripContext`)
-
-### Backend
-* **Runtime:** Node.js + Express.js
-* **Database:** PostgreSQL (with migration scripts & seed data)
-* **Authentication:** JWT & bcrypt
-* **Integrations:** Google Gemini AI API + Odoo Sync Client
+| 1 | **Auth & Carousel** | Full-screen carousel with custom timing, user login, and email credentials. |
+| 2 | **Dashboard Hub** | Central traveler hub with quick stats, upcoming trips, budget highlights, and AI modals. |
+| 3 | **Create Trip Modal** | Date range selectors, cover photo assignments, and budget trackers. |
+| 4 | **My Trips** | Filterable layouts of active, completed, upcoming, and planning itineraries. |
+| 5 | **Itinerary Builder** | Dynamic stop adder, city manager, and activity scheduler with real-time costs. |
+| 6 | **Itinerary View** | Structured timeline and grouped summary views with duration and expense badges. |
+| 7 | **City Search** | Destination finder filtered by popularity ratings, region, and categories. |
+| 8 | **Activity Search** | Curated experiences including Spiritual, Heritage, Nature, Culture, and Dining categories. |
+| 9 | **Trip Budget & Cost** | SVG Donut charts, category expense tracking, daily spend averages, and overbudget alerts. |
+| 10 | **Calendar & Timeline** | Interactive monthly date matrix and vertical timeline flow with day inspect panels. |
+| 11 | **Public Share View** | One-click public shareable links with social sharing and a "Copy This Trip" cloning CTA. |
+| 12 | **User Profile** | Personal profile updates, language preferences (Hindi, English, Sanskrit), and saved wishlists. |
+| 13 | **Admin & Analytics** | Adoption dashboard showing popular destinations and traveler activity metrics. |
 
 ---
 
@@ -94,8 +102,8 @@ Modern travel planning—especially for multi-city spiritual circuits and herita
 ### 1. Clone & Install
 ```bash
 # Clone the repository
-git clone https://github.com/utkarshkumarsinghcg-cmyk/odoo-pulse.git
-cd odoo-pulse
+git clone https://github.com/Chiragprajapat003/safar_sutra.git
+cd safar_sutra
 
 # Install Frontend dependencies
 cd frontend
@@ -112,11 +120,10 @@ VITE_GEMINI_API_KEY=your_gemini_api_key_here
 ```bash
 npm run dev
 ```
-Open **`http://localhost:5173`** in your browser.
+Open **`http://localhost:5174`** in your browser.
 
 ---
 
-## 🌐 One-Click Production Deployment
-
-* **Vercel:** Fully configured via [`vercel.json`](file:///c:/Users/utkarsh%20kumar%20singh/OneDrive/Desktop/OddoXlde/vercel.json) for client-side routing.
-* **Netlify:** Configured with [`frontend/public/_redirects`](file:///c:/Users/utkarsh%20kumar%20singh/OneDrive/Desktop/OddoXlde/frontend/public/_redirects).
+## 🌐 Production Deployment
+* **Vercel:** Configured via `vercel.json` for React Router single-page application redirection.
+* **Netlify:** Configured with `frontend/public/_redirects` for client-side routing.

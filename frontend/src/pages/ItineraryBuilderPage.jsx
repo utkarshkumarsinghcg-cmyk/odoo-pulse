@@ -6,7 +6,7 @@ import { mockActivities } from '../services/mockData';
 export default function ItineraryBuilderPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getTripById, updateTrip } = useTrips();
+  const { getTripById, updateTrip, generateAiItinerary } = useTrips();
   const trip = getTripById(id);
 
   const [activeDayIndex, setActiveDayIndex] = useState(0);
@@ -14,6 +14,20 @@ export default function ItineraryBuilderPage() {
   const [showAddCityModal, setShowAddCityModal] = useState(false);
   const [showAddActivityModal, setShowAddActivityModal] = useState(false);
   const [newActivity, setNewActivity] = useState({ name: '', time: '09:00', cost: 0, category: 'Spiritual', notes: '' });
+  const [aiGenerating, setAiGenerating] = useState(false);
+
+  const handleAiGenerate = async () => {
+    if (!trip) return;
+    setAiGenerating(true);
+    await generateAiItinerary(trip.id, {
+      destination: trip.stops?.[0] || trip.name,
+      days: 3,
+      budget: trip.budget || 60000,
+      interests: ['sightseeing', 'culture', 'food']
+    });
+    setAiGenerating(false);
+  };
+
 
   if (!trip) {
     return (
@@ -87,7 +101,17 @@ export default function ItineraryBuilderPage() {
           </div>
         </div>
 
-        <div className="flex gap-2.5">
+        <div className="flex flex-wrap gap-2.5">
+          <button
+            onClick={handleAiGenerate}
+            disabled={aiGenerating}
+            className="bg-[#0057d9] hover:bg-[#0041a7] text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+          >
+            <span className={`material-symbols-outlined text-base ${aiGenerating ? 'animate-spin' : ''}`}>
+              {aiGenerating ? 'progress_activity' : 'auto_awesome'}
+            </span>
+            <span>{aiGenerating ? 'Generating...' : 'AI Auto-Generate'}</span>
+          </button>
           <button
             onClick={() => setShowAddCityModal(true)}
             className="bg-[#FAF7F2] hover:bg-[#F5ECE1] text-[#4A2E18] border border-[#D8C6B6] px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
@@ -103,6 +127,7 @@ export default function ItineraryBuilderPage() {
             <span>View Itinerary</span>
           </button>
         </div>
+
       </div>
 
       {/* Main Builder Grid */}

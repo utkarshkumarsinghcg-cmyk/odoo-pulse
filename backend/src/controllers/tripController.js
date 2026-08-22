@@ -10,8 +10,7 @@ async function getTrips(req, res, next) {
   try {
     const userId = req.user.id;
     const tripsRes = await db.query(
-      `SELECT t.*, b.total_budget, b.spent_so_far, b.currency,
-              (SELECT COUNT(*) FROM stops s WHERE s.trip_id = t.id) as stops_count
+      `SELECT t.*, b.total_budget, b.spent_so_far, b.currency
        FROM trips t
        LEFT JOIN budget b ON b.trip_id = t.id
        WHERE t.user_id = $1
@@ -19,8 +18,25 @@ async function getTrips(req, res, next) {
       [userId]
     );
 
+    const trips = [];
+    for (let row of tripsRes.rows) {
+      const stopsRes = await db.query(
+        `SELECT * FROM stops WHERE trip_id = $1 ORDER BY order_index ASC`,
+        [row.id]
+      );
+      const stops = stopsRes.rows;
+      for (let stop of stops) {
+        const actRes = await db.query(
+          `SELECT * FROM activities WHERE stop_id = $1 ORDER BY time_slot ASC`,
+          [stop.id]
+        );
+        stop.activities = actRes.rows;
+      }
+      trips.push({ ...row, stops });
+    }
+
     res.json({
-      trips: tripsRes.rows,
+      trips,
     });
   } catch (error) {
     next(error);
@@ -144,7 +160,7 @@ async function updateTrip(req, res, next) {
   try {
     const tripId = req.params.id;
     const userId = req.user.id;
-    const { name, description, start_date, end_date, cover_photo_url, is_public, status } = req.body;
+    const { name, description, start_date, end_date, cover_photo_url, is_public, status, days } = req.body;
 
     const check = await db.query('SELECT user_id FROM trips WHERE id = $1', [tripId]);
     if (check.rows.length === 0) return res.status(404).json({ error: 'Trip not found.' });
@@ -162,6 +178,39 @@ async function updateTrip(req, res, next) {
        WHERE id = $8 RETURNING *`,
       [name, description, start_date, end_date, cover_photo_url, is_public, status, tripId]
     );
+
+    if (days && Array.isArray(days)) {
+      // Clear existing stops and activities
+      await db.query('DELETE FROM stops WHERE trip_id = $1', [tripId]);
+      
+      let totalSpent = 0;
+      for (let dayData of days) {
+        const stopRes = await db.query(
+          `INSERT INTO stops (trip_id, city, country, start_date, order_index)
+           VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+          [tripId, dayData.city, 'Global', dayData.date || start_date || '2026-10-15', dayData.day]
+        );
+        const stopId = stopRes.rows[0].id;
+
+        if (dayData.activities && Array.isArray(dayData.activities)) {
+          for (let act of dayData.activities) {
+            const costVal = Number(act.cost) || 0;
+            totalSpent += costVal;
+            await db.query(
+              `INSERT INTO activities (stop_id, name, description, type, cost, duration, time_slot, address)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+              [stopId, act.name, act.notes || act.description || '', act.category || act.type || 'Spiritual', costVal, '1.5h', act.time || act.time_slot || '10:00', dayData.city]
+            );
+          }
+        }
+      }
+      
+      // Update budget spent
+      await db.query(
+        `UPDATE budget SET spent_so_far = $1 WHERE trip_id = $2`,
+        [totalSpent, tripId]
+      );
+    }
 
     res.json({ message: 'Trip updated successfully', trip: updated.rows[0] });
   } catch (error) {

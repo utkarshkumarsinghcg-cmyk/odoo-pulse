@@ -123,4 +123,30 @@ Return ONLY a strict JSON object matching this structure (no markdown formatting
   }
 }
 
-module.exports = { generateItinerary, getFallbackItinerary };
+/**
+ * Conversational AI assistant for Safar AI ChatBot
+ */
+async function chatWithAI(userMessage, conversationHistory = []) {
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey || apiKey.trim() === '') {
+    return `Namaste! 🙏 I am Safar AI.\n\nHere is a recommendation for "${userMessage}":\n\n• **Best Time to Visit:** October to March for pleasant weather.\n• **Recommended Stay:** 3 to 4 days for comprehensive sightseeing.\n• **Estimated Daily Budget:** ₹3,500 – ₹7,000 per day including Satvik meals and local heritage passes.`;
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    const prompt = `You are Safar AI, the intelligent spiritual & global travel guide for SafarSutra / GlobeTrotter.
+Provide helpful, formatted advice with bullet points, Aarti pass timings, budget estimates in USD & INR, temple etiquette, and dining recommendations with emojis.\n\nUser Question: ${userMessage}`;
+
+    const result = await model.generateContent(prompt);
+    return result.response.text().trim();
+  } catch (err) {
+    console.error('[Gemini AI Chat Error]', err.message);
+    return `Namaste! 🙏 For "${userMessage}":\n\n1. **Best Time to Visit:** Oct - Mar\n2. **Suggested Duration:** 3-5 days\n3. **Est. Budget:** $45 - $80 / day\n\nHave a blessed journey!`;
+  }
+}
+
+module.exports = { generateItinerary, getFallbackItinerary, chatWithAI };
+

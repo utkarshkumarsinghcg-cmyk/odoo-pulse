@@ -28,21 +28,77 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState('profile');
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [customPhotoUrl, setCustomPhotoUrl] = useState('');
+  
+  // Drag and Drop States
+  const [isDragging, setIsDragging] = useState(false);
+  const [modalDragging, setModalDragging] = useState(false);
 
-  // Handle direct image file upload
+  // Helper to process uploaded or dropped image file
+  const processImageFile = (file) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      const base64Url = uploadEvent.target?.result;
+      if (base64Url) {
+        setForm((prev) => ({ ...prev, avatar: base64Url }));
+        updateUser({ avatar: base64Url });
+        setShowPhotoModal(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Handle direct file input selection
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (uploadEvent) => {
-        const base64Url = uploadEvent.target?.result;
-        if (base64Url) {
-          setForm((prev) => ({ ...prev, avatar: base64Url }));
-          updateUser({ avatar: base64Url });
-          setShowPhotoModal(false);
-        }
-      };
-      reader.readAsDataURL(file);
+      processImageFile(file);
+    }
+  };
+
+  // Drag and Drop Handlers for Main Profile Avatar Card
+  const handleMainDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleMainDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleMainDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const file = e.dataTransfer?.files?.[0];
+    if (file) {
+      processImageFile(file);
+    }
+  };
+
+  // Drag and Drop Handlers for Modal Upload Area
+  const handleModalDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setModalDragging(true);
+  };
+
+  const handleModalDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setModalDragging(false);
+  };
+
+  const handleModalDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setModalDragging(false);
+    const file = e.dataTransfer?.files?.[0];
+    if (file) {
+      processImageFile(file);
     }
   };
 
@@ -107,35 +163,55 @@ export default function ProfilePage() {
       {activeTab === 'profile' && (
         <div className="space-y-6">
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EADBCE] shadow-warm-md">
-            {/* Profile Avatar Header with Change Photo Action */}
+            {/* Profile Avatar Header with Drag & Drop */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 mb-6 pb-6 border-b border-[#EADBCE]">
               <div className="flex items-center gap-5">
-                <div className="relative group">
+                <div
+                  onDragOver={handleMainDragOver}
+                  onDragLeave={handleMainDragLeave}
+                  onDrop={handleMainDrop}
+                  className={`relative group rounded-3xl p-1 transition-all ${
+                    isDragging ? 'ring-4 ring-[#0057d9] bg-[#0057d9]/10 scale-105' : ''
+                  }`}
+                >
                   <img
                     src={form.avatar || user?.avatar || PRESET_AVATARS[2].url}
                     alt={user?.name}
                     className="w-24 h-24 rounded-3xl object-cover border-3 border-[#D4A373] shadow-md transition-transform group-hover:scale-102"
                   />
+                  
+                  {/* Hover or Drag Overlay */}
                   <button
                     type="button"
                     onClick={() => setShowPhotoModal(true)}
-                    className="absolute inset-0 bg-black/40 rounded-3xl opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white transition-opacity cursor-pointer text-xs font-bold"
+                    className={`absolute inset-0 bg-black/50 rounded-3xl flex flex-col items-center justify-center text-white transition-opacity cursor-pointer text-xs font-bold ${
+                      isDragging ? 'opacity-100 bg-[#0057d9]/80' : 'opacity-0 group-hover:opacity-100'
+                    }`}
                   >
-                    <span className="material-symbols-outlined text-xl">photo_camera</span>
-                    <span>Change</span>
+                    <span className="material-symbols-outlined text-2xl mb-0.5">
+                      {isDragging ? 'cloud_upload' : 'photo_camera'}
+                    </span>
+                    <span>{isDragging ? 'Drop Photo Here' : 'Change'}</span>
                   </button>
                 </div>
+
                 <div>
                   <h2 className="text-xl font-bold text-[#2A180C]">{user?.name}</h2>
                   <p className="text-xs text-[#8A715F]">{user?.email}</p>
-                  <button
-                    type="button"
-                    onClick={() => setShowPhotoModal(true)}
-                    className="mt-2 bg-[#FAF7F2] hover:bg-[#F5ECE1] text-[#4A2E18] border border-[#D8C6B6] px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                  >
-                    <span className="material-symbols-outlined text-sm text-[#C88A4B]">add_a_photo</span>
-                    <span>Change Profile Photo</span>
-                  </button>
+                  
+                  <div className="flex items-center gap-2 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowPhotoModal(true)}
+                      className="bg-[#FAF7F2] hover:bg-[#F5ECE1] text-[#4A2E18] border border-[#D8C6B6] px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <span className="material-symbols-outlined text-sm text-[#C88A4B]">add_a_photo</span>
+                      <span>Change Photo</span>
+                    </button>
+                    <span className="text-[11px] text-[#8A715F] italic hidden sm:inline-block">
+                      (or drag & drop an image onto photo)
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -289,7 +365,7 @@ export default function ProfilePage() {
               </button>
             </div>
 
-            {/* Option 1: Direct File Upload */}
+            {/* Option 1: Direct File Upload & Drag-and-Drop Area */}
             <div>
               <label className="block text-xs font-bold text-[#5A4536] mb-2">Upload from Computer</label>
               <input
@@ -299,15 +375,29 @@ export default function ProfilePage() {
                 accept="image/*"
                 className="hidden"
               />
-              <button
-                type="button"
+              <div
+                onDragOver={handleModalDragOver}
+                onDragLeave={handleModalDragLeave}
+                onDrop={handleModalDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full py-4 border-2 border-dashed border-[#D4A373] hover:border-[#4A2E18] bg-[#FAF7F2] hover:bg-[#F5ECE1] rounded-2xl flex flex-col items-center justify-center gap-1.5 text-[#4A2E18] transition-all cursor-pointer"
+                className={`w-full py-6 px-4 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-2 transition-all cursor-pointer ${
+                  modalDragging
+                    ? 'border-[#0057d9] bg-[#0057d9]/10 text-[#0057d9] scale-102 ring-2 ring-[#0057d9]/20'
+                    : 'border-[#D4A373] hover:border-[#4A2E18] bg-[#FAF7F2] hover:bg-[#F5ECE1] text-[#4A2E18]'
+                }`}
               >
-                <span className="material-symbols-outlined text-3xl text-[#C88A4B]">cloud_upload</span>
-                <span className="text-xs font-bold">Choose an image file (PNG, JPG, WebP)</span>
-                <span className="text-[10px] text-[#8A715F]">Instant preview & profile update</span>
-              </button>
+                <span className={`material-symbols-outlined text-4xl transition-transform ${modalDragging ? 'scale-125 text-[#0057d9]' : 'text-[#C88A4B]'}`}>
+                  {modalDragging ? 'file_download' : 'cloud_upload'}
+                </span>
+                <div className="text-center">
+                  <span className="text-xs font-bold block">
+                    {modalDragging ? 'Drop your image file now!' : 'Drag & drop image file here, or click to browse'}
+                  </span>
+                  <span className="text-[10px] text-[#8A715F] mt-0.5 block">
+                    Supports PNG, JPG, WebP, GIF (Instant Base64 update & cloud persistence)
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Option 2: Choose from Curated Avatar Presets */}

@@ -46,7 +46,7 @@ export default function TopNavBar({ onPlanTrip }) {
 
         {/* Navigation Tabs */}
         <div className="flex items-center gap-1 xl:gap-2 shrink-0">
-          {navLinks.map((link) => {
+          {navLinks.filter(link => link.to !== '/admin' || (user?.email === 'demo@safarsutra.com' || user?.email?.toLowerCase().includes('admin'))).map((link) => {
             const active =
               location.pathname === link.to ||
               (link.to !== '/dashboard' && location.pathname.startsWith(link.to + '/'));
@@ -118,12 +118,14 @@ export default function TopNavBar({ onPlanTrip }) {
             >
               <span className="material-symbols-outlined text-base">person</span> Profile & Settings
             </Link>
-            <Link
-              to="/admin"
-              className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-[#5A4536] hover:bg-[#FAF7F2] hover:text-[#4A2E18] transition-colors"
-            >
-              <span className="material-symbols-outlined text-base">analytics</span> Platform Analytics
-            </Link>
+            {(user?.email === 'demo@safarsutra.com' || user?.email?.toLowerCase().includes('admin')) && (
+              <Link
+                to="/admin"
+                className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-[#5A4536] hover:bg-[#FAF7F2] hover:text-[#4A2E18] transition-colors"
+              >
+                <span className="material-symbols-outlined text-base">analytics</span> Platform Analytics
+              </Link>
+            )}
             <button
               onClick={handleLogout}
               className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-red-700 hover:bg-red-50 transition-colors w-full text-left cursor-pointer"

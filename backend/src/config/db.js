@@ -118,9 +118,14 @@ async function query(text, params = []) {
   }
 
   if (normalizedText.includes('SELECT T.*, B.TOTAL_BUDGET')) {
-    const tripId = params[0];
     let matchedTrips = memoryStore.trips;
-    if (tripId) matchedTrips = memoryStore.trips.filter(t => t.id === Number(tripId));
+    if (normalizedText.includes('WHERE T.USER_ID =')) {
+      const userId = params[0];
+      if (userId) matchedTrips = memoryStore.trips.filter(t => t.user_id === Number(userId));
+    } else {
+      const tripId = params[0];
+      if (tripId) matchedTrips = memoryStore.trips.filter(t => t.id === Number(tripId));
+    }
     const result = matchedTrips.map(t => {
       const b = memoryStore.budget.find(bg => bg.trip_id === t.id) || { total_budget: 60000, spent_so_far: 0, currency: '₹' };
       return { ...t, ...b };

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { mockUser } from '../services/mockData';
+import { authApi } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -8,53 +9,109 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem('gt_user');
-    if (stored) setUser(JSON.parse(stored));
-    setLoading(false);
+    async function initAuth() {
+      const token = localStorage.getItem('gt_token');
+      const storedUser = localStorage.getItem('gt_user');
+
+      if (token) {
+        try {
+          const res = await authApi.getMe();
+          setUser(res.user);
+          localStorage.setItem('gt_user', JSON.stringify(res.user));
+        } catch (err) {
+          console.warn('Backend session check notice:', err.message);
+          if (storedUser) setUser(JSON.parse(storedUser));
+        }
+      } else if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      } else {
+        // Guest user default
+        const defaultUser = { ...mockUser };
+        setUser(defaultUser);
+        localStorage.setItem('gt_user', JSON.stringify(defaultUser));
+      }
+      setLoading(false);
+    }
+
+    initAuth();
   }, []);
 
-  const login = (email, password) => {
-    if (email && password) {
-      const authedUser = { ...mockUser, email, authProvider: 'email' };
-      setUser(authedUser);
-      localStorage.setItem('gt_user', JSON.stringify(authedUser));
-      return true;
+  const login = async (email, password) => {
+    try {
+      const res = await authApi.login(email, password);
+      if (res.token && res.user) {
+        localStorage.setItem('gt_token', res.token);
+        localStorage.setItem('gt_user', JSON.stringify(res.user));
+        setUser(res.user);
+        return { success: true, user: res.user };
+      }
+      return { success: false, error: res.error || 'Authentication failed.' };
+    } catch (err) {
+      console.warn('Backend login notice, falling back locally:', err.message);
+      if (email && password) {
+        const fallbackUser = { ...mockUser, email, authProvider: 'email' };
+        setUser(fallbackUser);
+        localStorage.setItem('gt_user', JSON.stringify(fallbackUser));
+        return { success: true, user: fallbackUser };
+      }
+      return { success: false, error: err.message || 'Invalid email or password.' };
     }
-    return false;
   };
 
-  const signup = (name, email, password) => {
-    if (name && email && password) {
-      const newUser = { ...mockUser, name, email, authProvider: 'email' };
-      setUser(newUser);
-      localStorage.setItem('gt_user', JSON.stringify(newUser));
-      return true;
+  const signup = async (name, email, password) => {
+    try {
+      const res = await authApi.register(name, email, password);
+      if (res.token && res.user) {
+        localStorage.setItem('gt_token', res.token);
+        localStorage.setItem('gt_user', JSON.stringify(res.user));
+        setUser(res.user);
+        return { success: true, user: res.user };
+      }
+      return { success: false, error: res.error || 'Registration failed.' };
+    } catch (err) {
+      console.warn('Backend signup notice, falling back locally:', err.message);
+      if (name && email && password) {
+        const fallbackUser = { ...mockUser, name, email, authProvider: 'email' };
+        setUser(fallbackUser);
+        localStorage.setItem('gt_user', JSON.stringify(fallbackUser));
+        return { success: true, user: fallbackUser };
+      }
+      return { success: false, error: err.message || 'Registration failed.' };
     }
-    return false;
   };
 
   const loginWithGoogle = async (googleData = null) => {
-    // Simulates instant or custom Google OAuth authentication
     const googleUser = googleData || {
       id: 101,
       name: 'Alex Johnson',
       email: 'alex.traveler@gmail.com',
-      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDlBy-yCwRN_SXsMlaM4lZx1TGx3g1_o33z6eONLlrWYTDYJyZqGv7sAO7Ydu2yUwahMv9psKT3tkUwi10kwrtdZOrURcKgetzQxTTALFhqAGPdbcVl69LqluPxtMSt8tOlvS_2tRE7nrmSSW_kKk1sv49CIkbis5poNzgsw2iAS4xpTmmHi6WqZthbptv45LRJhdU37KbYw2_94_idgzvFyqmSW3IXnizwXC-A7gBbt0HNFATojzkR',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
       countriesVisited: 14,
       tripsPlanned: 4,
       authProvider: 'google',
     };
     setUser(googleUser);
     localStorage.setItem('gt_user', JSON.stringify(googleUser));
-    return true;
+    return { success: true, user: googleUser };
   };
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('gt_token');
     localStorage.removeItem('gt_user');
   };
 
-  const updateUser = (updates) => {
+  const updateUser = async (updates) => {
+    try {
+      const res = await authApi.updateProfile(updates);
+      if (res.user) {
+        setUser(res.user);
+        localStorage.setItem('gt_user', JSON.stringify(res.user));
+        return res.user;
+      }
+    } catch (err) {
+      console.warn('Backend profile update notice:', err.message);
+    }
     setUser((prev) => {
       if (!prev) return null;
       const next = { ...prev, ...updates };
