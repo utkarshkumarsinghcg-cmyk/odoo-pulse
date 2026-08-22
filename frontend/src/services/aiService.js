@@ -25,20 +25,20 @@ export function setStoredApiKey(key) {
 }
 
 /**
- * Chat with real AI using Gemini or OpenAI with dual auth support
+ * Chat with real AI using Gemini or OpenAI with conversational fallback
  */
 export async function chatWithSafarAI(userMessage, conversationHistory = []) {
   const apiKey = getStoredApiKey();
 
   if (apiKey) {
     try {
-      // 1. Check for OpenAI Key
+      // 1. Check for OpenAI Key (sk-...)
       if (apiKey.startsWith('sk-')) {
         const messages = [
           {
             role: 'system',
             content:
-              'You are Safar AI, the ultimate spiritual, cultural, and world travel assistant for Safar-sutra. Provide formatted day-wise itineraries, Aarti pass timings, budget estimates in USD & INR, temple etiquette, and dining recommendations with markdown and emojis.',
+              'You are Safar AI, an expert spiritual, cultural, and world travel assistant for Safar-sutra. Greet warmly if the user greets. Provide accurate real-world advice, day-wise itineraries, Aarti pass timings, budget estimates, and satvik dining recommendations formatted with markdown.',
           },
           ...conversationHistory.map((m) => ({
             role: m.sender === 'ai' ? 'assistant' : 'user',
@@ -66,13 +66,13 @@ export async function chatWithSafarAI(userMessage, conversationHistory = []) {
           if (text) return text;
         }
       } else {
-        // 2. Google Gemini API Call (Supports both API Key query param and Bearer token for AQ... tokens)
+        // 2. Google Gemini API Call
         const contents = [
           {
             role: 'user',
             parts: [
               {
-                text: `You are Safar AI, the expert travel and sacred yatra assistant for Safar-sutra. Provide a comprehensive, structured response with bullet points, timings, recommended hotels/satvik meals, and costs.\n\nUser Question: ${userMessage}`,
+                text: `You are Safar AI, the conversational travel and sacred yatra assistant for Safar-sutra. Respond naturally and helpfully. If the user greets (hi, hello), greet them warmly and ask how you can help plan their yatra or holiday. If they ask about a destination, provide realistic timings, costs, and secret travel tips with markdown.\n\nUser Question: ${userMessage}`,
               },
             ],
           },
@@ -94,34 +94,14 @@ export async function chatWithSafarAI(userMessage, conversationHistory = []) {
           const data = await res.json();
           const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
           if (reply) return reply;
-        } else {
-          // If bearer token failed, try without query param
-          const errorData = await res.json().catch(() => ({}));
-          console.warn('Gemini API Response Details:', errorData);
-
-          if (apiKey.startsWith('AQ.')) {
-            const res2 = await fetch(GEMINI_MODELS[0], {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${apiKey}`,
-              },
-              body: JSON.stringify({ contents }),
-            });
-            if (res2.ok) {
-              const data2 = await res2.json();
-              const reply2 = data2.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (reply2) return reply2;
-            }
-          }
         }
       }
     } catch (error) {
-      console.warn('API fetch attempt failed, using intelligent travel engine:', error);
+      console.warn('Live API call failed, switching to conversational travel intelligence:', error);
     }
   }
 
-  // High-Quality Intelligent Travel Engine (Customized to every location)
+  // Real-World Conversational Travel Intelligence Engine
   return generateIntelligentTravelGuide(userMessage);
 }
 
@@ -242,13 +222,41 @@ Return ONLY valid JSON matching this exact structure:
 }
 
 /**
- * Rich domain-specific travel intelligence engine
+ * Real-World Conversational Travel Intelligence Engine
  */
-function generateIntelligentTravelGuide(query) {
-  const q = query.toLowerCase();
+function generateIntelligentTravelGuide(rawQuery) {
+  const query = rawQuery.trim().toLowerCase();
 
-  // JAIPUR & RAJASTHAN
-  if (q.includes('jaipur') || q.includes('fort') || q.includes('rajasthan')) {
+  // 1. GREETINGS & INTRODUCTIONS
+  const greetings = ['hi', 'hello', 'hey', 'namaste', 'pranam', 'good morning', 'good evening', 'good afternoon', 'hola', 'hii', 'hiii', 'heyy'];
+  if (greetings.includes(query) || query === 'hi there' || query === 'hello safar ai') {
+    return `🙏 **Namaste & Welcome to Safar-sutra!**
+
+I am **Safar AI**, your personal travel & sacred yatra companion. Here is what I can help you with:
+
+• 🪔 **Temple Darshan & Aarti:** Real-time timings, VIP pass info, and etiquette for Ayodhya, Kashi, Kedarnath, and Tirupati.
+• 🏰 **Heritage & Fort Circuits:** Curated day-by-day plans for Jaipur, Udaipur, and royal palaces.
+• 💰 **Trip Budgeting:** Realistic cost breakdowns for hotels, Satvik food, trains, and cabs.
+• 🗺️ **Live Distance & Directions:** Check exact distance and route travel times from your location.
+
+Where are you planning your next journey? (e.g. *Ayodhya, Varanasi, Jaipur, or Andaman*)`;
+  }
+
+  // 2. HELP & WHO ARE YOU
+  if (query.includes('who are you') || query.includes('what can you do') || query === 'help' || query.includes('features')) {
+    return `✨ **I am Safar AI — Intelligent Travel Assistant for Safar-sutra.**
+
+**How I can assist you:**
+1. **Plan Custom Itineraries:** Give me any destination (e.g. *"Plan 3 days in Varanasi"*), and I will generate a morning-to-night schedule.
+2. **Estimate Budgets:** Ask for budget breakdowns for families, couples, or solo travelers.
+3. **Temple Guidelines:** Accurate Aarti timings, dress codes, and best darshan slots.
+4. **Local Secrets:** Authentic Satvik thalis, scenic sunset ghats, and hidden heritage corridors.
+
+Just type your question or click any of the starter prompt chips below!`;
+  }
+
+  // 3. JAIPUR & RAJASTHAN
+  if (query.includes('jaipur') || query.includes('fort') || query.includes('rajasthan')) {
     return `🏰 **Royal Jaipur Heritage & Forts Guide:**
 
 1. **Amber Fort & Palace (Amer):**
@@ -268,8 +276,8 @@ function generateIntelligentTravelGuide(query) {
 🍲 **Satvik & Royal Dining:** Authentic Dal Baati Churma at *LMB (Johari Bazar)* or royal dinner at *Chokhi Dhani*.`;
   }
 
-  // AYODHYA & RAM JANMABHOOMI
-  if (q.includes('ayodhya') || q.includes('ram mandir') || q.includes('aarti')) {
+  // 4. AYODHYA & RAM JANMABHOOMI
+  if (query.includes('ayodhya') || query.includes('ram mandir') || query.includes('aarti') || query.includes('janmabhoomi')) {
     return `🪔 **Shri Ram Janmabhoomi & Ayodhya Yatra Guide:**
 
 1. **Ram Janmabhoomi Mandir Darshan:**
@@ -289,8 +297,8 @@ function generateIntelligentTravelGuide(query) {
 💡 **Travel Tip:** Electric golf carts and lockers are available free of charge along the Janmabhoomi Path.`;
   }
 
-  // VARANASI / KASHI
-  if (q.includes('varanasi') || q.includes('kashi') || q.includes('ganga')) {
+  // 5. VARANASI / KASHI
+  if (query.includes('varanasi') || query.includes('kashi') || query.includes('ganga') || query.includes('banaras')) {
     return `🕉️ **Sacred Kashi & Varanasi Pilgrimage Itinerary:**
 
 • **Day 1 (Ghats & Grand Aarti):**
@@ -306,8 +314,8 @@ function generateIntelligentTravelGuide(query) {
 🍲 **Satvik Specialties:** Banarasi Kachori-Jalebi at *Ram Bhandar*, Blue Lassi Shop, and authentic Banarasi Paan.`;
   }
 
-  // KEDARNATH & CHAR DHAM
-  if (q.includes('kedarnath') || q.includes('badrinath') || q.includes('char dham') || q.includes('rishikesh')) {
+  // 6. KEDARNATH & CHAR DHAM
+  if (query.includes('kedarnath') || query.includes('badrinath') || query.includes('char dham') || query.includes('rishikesh')) {
     return `🏔️ **Kedarnath Dham & Rishikesh Yatra Guide:**
 
 1. **Route & Trek Details:**
@@ -326,8 +334,8 @@ function generateIntelligentTravelGuide(query) {
 ⚠️ **Essential Items:** Warm thermal layers, raincoat, valid Biometric Yatra Registration Pass, and high-altitude medication.`;
   }
 
-  // ANDAMAN & BEACHES
-  if (q.includes('andaman') || q.includes('havelock') || q.includes('beach') || q.includes('scuba')) {
+  // 7. ANDAMAN & BEACHES
+  if (query.includes('andaman') || query.includes('havelock') || query.includes('beach') || query.includes('scuba')) {
     return `🏝️ **Andaman & Nicobar Island Discovery:**
 
 • **Port Blair:** Cellular Jail Sound & Light Show, Corbyn's Cove Beach.
@@ -337,8 +345,8 @@ function generateIntelligentTravelGuide(query) {
 💰 **Estimated Budget:** ~$650–$900 per person for 5 days including Makruzz inter-island luxury ferries, beach resort, and water sports.`;
   }
 
-  // GENERAL SMART TRAVEL ANSWER
-  return `✨ **Safar-sutra AI Travel Recommendation for "${query}":**
+  // 8. GENERAL SMART TRAVEL ANSWER
+  return `✨ **Safar-sutra AI Travel Recommendation for "${rawQuery}":**
 
 1. **Best Time & Season to Visit:**
    • October to March offers the most pleasant climate for spiritual darshan, sightseeing, and outdoor tours.
